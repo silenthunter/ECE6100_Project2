@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <iostream>
 #include <map>
-//#include <cmath>
 
 using std::map;
 
@@ -54,6 +53,8 @@ inline void clear_btb();
 inline double log2(double n);
 #pragma endregion
 
+enum PREDICTOR { BR_GAg, BR_GAp, BR_PAg, BR_gshare};
+
 int main(int argc, char *argv[])
 {
 	if ((f1 = fopen("history.txt", "r")) == NULL) {
@@ -61,9 +62,23 @@ int main(int argc, char *argv[])
 		error("no history.txt file found.");
     }
 
-	if (argc > 1)                       /* 1st arg is BTB length */
-	 btb_len = atoi(argv[1]);
-    else btb_len = MAX_BTB_LEN;
+    btb_len = MAX_BTB_LEN;
+	PREDICTOR choice = BR_GAg;
+
+	//Parse the command line flags
+	for(int i = 1; i < argc; i++)
+	{
+		//get the predictor to use
+		if(!strcmp(argv[i], "-t"))
+		{
+			if(!strcmp(argv[i + 1], "gag")) choice = BR_GAg;
+			else if(!strcmp(argv[i + 1], "gap")) choice = BR_GAp;
+			else if(!strcmp(argv[i + 1], "pag")) choice = BR_PAg;
+			else if(!strcmp(argv[i + 1], "gshare")) choice = BR_gshare;
+		}
+		else if(!strcmp(argv[i], "-k")) kBits = atoi(argv[i + 1]);
+		else if(!strcmp(argv[i], "-s")) PHTSize = atoi(argv[i + 1]);
+	}
 
     correct_predictions = mispredictions = 0;
     msbraddr = msbraddr_hits = msbraddr_misses = 0;
