@@ -56,6 +56,7 @@ inline double log2(double n);
 int main(int argc, char *argv[])
 {
 	if ((f1 = fopen("history.txt", "r")) == NULL) {
+	//if ((f1 = fopen("TestBranches.txt", "r")) == NULL) {
 		error("no history.txt file found.");
     }
 
@@ -96,12 +97,12 @@ void GAg()
 		if(branchRecord[tot_brs].taken)
 		{
 			if(PHT[PHTidx] == 1) PHT[PHTidx]++;//Move from weak not taken to strong taken
-			PHT[PHTidx]++;
+			if(PHT[PHTidx] < 3) PHT[PHTidx]++;
 		}
 		else
 		{
 			if(PHT[PHTidx] == 2) PHT[PHTidx]--;//Move from weak taken to strong not taken
-			PHT[PHTidx]--;
+			if(PHT[PHTidx] > 0) PHT[PHTidx]--;
 		}
 #pragma endregion
 	}
@@ -147,12 +148,12 @@ void GAs()
 		if(branchRecord[tot_brs].taken)
 		{
 			if(localPHT[PHTidx] == 1) localPHT[PHTidx]++;//Move from weak not taken to strong taken
-			localPHT[PHTidx]++;
+			if(localPHT[PHTidx] < 3) localPHT[PHTidx]++;
 		}
 		else
 		{
 			if(localPHT[PHTidx] == 2) localPHT[PHTidx]--;//Move from weak taken to strong not taken
-			localPHT[PHTidx]--;
+			if(localPHT[PHTidx] > 0) localPHT[PHTidx]--;
 		}
 #pragma endregion
 	}
@@ -198,12 +199,12 @@ void PAg(int exp, int BHTbits)
 		if(branchRecord[tot_brs].taken)
 		{
 			if(PHT[PHTidx] == 1) PHT[PHTidx]++;//Move from weak not taken to strong taken
-			PHT[PHTidx]++;
+			if(PHT[PHTidx] < 3) PHT[PHTidx]++;
 		}
 		else
 		{
 			if(PHT[PHTidx] == 2) PHT[PHTidx]--;//Move from weak taken to strong not taken
-			PHT[PHTidx]--;
+			if(PHT[PHTidx] > 0) PHT[PHTidx]--;
 		}
 
 		//Store the new BHR

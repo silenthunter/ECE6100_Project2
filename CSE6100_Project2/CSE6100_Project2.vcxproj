@@ -71,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="history.txt" />
+    <Text Include="TestBranches.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
