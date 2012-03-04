@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <map>
+//#include <cmath>
+
+using namespace std;
 
 #define MAX_BTB_LEN 100000
 #define MAXITERS 100000
@@ -14,7 +18,12 @@ unsigned int BHRMask;
 unsigned int BHR;
 unsigned char *PHT;
 
+int kBits = 4;
 int totalBranches;
+
+int GApEntries = 32;
+int bitsFromAddress;
+map<int, char*> GApHash;
 
 int correct_predictions, mispredictions, tot_brs, btb_len, msbraddr, msbraddr_hits, msbraddr_misses;
 
@@ -30,6 +39,7 @@ struct {
 #pragma region Inline Declarations
 inline void error(char *s);
 inline void GAg();
+inline void GAs();
 inline void SetupPHT(int exp);
 inline int get_btb_index(int addr_br_instr);
 inline int check_prediction(int branch, int index);
@@ -37,6 +47,7 @@ inline void update_table(int branch, int index, int addr, int target);
 inline void run_btb();
 inline void populate_branchRecord();
 inline void clear_btb();
+inline double log2(double n);
 #pragma endregion
 
 int main(int argc, char *argv[])
@@ -52,9 +63,14 @@ int main(int argc, char *argv[])
     correct_predictions = mispredictions = 0;
     msbraddr = msbraddr_hits = msbraddr_misses = 0;
 
-	SetupPHT(8);
+	SetupPHT(kBits);
     populate_branchRecord();
+
 	GAg();
+	correct_predictions = mispredictions = 0;
+	GAs();
+	
+	getchar();
 }
 
 void GAg()
@@ -84,6 +100,59 @@ void GAg()
 		}
 #pragma endregion
 	}
+
+	printf("GAg\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
+}
+
+void GAs()
+{
+	fseek(f1, 0, SEEK_SET);
+	bitsFromAddress = (int)log2(GApEntries) - kBits;
+	int addrMask = 0;
+	for(int i = 0; i < bitsFromAddress; i++)//Creates a mask to get the lower bits of the address
+		addrMask |= 1 << i;
+	
+    for (tot_brs=0; tot_brs < totalBranches; tot_brs++) {
+		int address = branchRecord[tot_brs].addr_of_br;
+		int PHTidx = ((BHR & BHRMask) << bitsFromAddress) | (address & addrMask);
+		
+		char* localPHT;
+
+		//Find the address' PHT
+		//Initialize a PHT if necessary
+		map<int, char*>::iterator it = GApHash.find(address);
+		if(it == GApHash.end())
+		{
+			localPHT = new char[GApEntries];
+			memset(localPHT, 0, sizeof(char) * GApEntries);//Set all entries to 00. (SNP)
+			GApHash[address] = localPHT;
+		}
+		else
+			localPHT = it->second;
+
+		int prediction = (localPHT[PHTidx] & 2) >> 1;//Checks to see if the record at the BHR index is 10 or 11. (Taken)
+		if(prediction == branchRecord[tot_brs].taken)
+			correct_predictions++;
+		else
+			mispredictions++;
+
+		//Update PHT and BHR
+#pragma region Updates
+		BHR = (BHR << 1) + branchRecord[tot_brs].taken;
+		if(branchRecord[tot_brs].taken)
+		{
+			if(localPHT[PHTidx] == 1) localPHT[PHTidx]++;//Move from weak not taken to strong taken
+			localPHT[PHTidx]++;
+		}
+		else
+		{
+			if(localPHT[PHTidx] == 2) localPHT[PHTidx]--;//Move from weak taken to strong not taken
+			localPHT[PHTidx]--;
+		}
+#pragma endregion
+	}
+
+	printf("GAp\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
 }
 
 void SetupPHT(int exp)
@@ -208,4 +277,12 @@ void error(char *s)
     printf("%s \nExiting this sorry mess.\n\n", s);
 
     exit(1);
+}
+
+//Source: Lothar on http://stackoverflow.com/questions/758001/log2-not-found-in-my-math-h
+// Calculates log2 of number.  
+double log2( double n )  
+{  
+    // log(n)/log(2) is log2.  
+    return log( n ) / log( 2 );  
 }
