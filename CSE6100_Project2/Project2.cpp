@@ -43,6 +43,7 @@ inline void error(char *s);
 inline void GAg();
 inline void GAs();
 inline void PAg(int, int);
+inline void gshare(int, int);
 inline void SetupPHT(int exp);
 inline int get_btb_index(int addr_br_instr);
 inline int check_prediction(int branch, int index);
@@ -76,6 +77,8 @@ int main(int argc, char *argv[])
 	GAs();
 	correct_predictions = mispredictions = 0;
 	PAg(kBits, 5);
+	correct_predictions = mispredictions = 0;
+	gshare(kBits, 4);
 	
 	getchar();
 }
@@ -213,6 +216,48 @@ void PAg(int exp, int BHTbits)
 	}
 
 	printf("PAg\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
+}
+
+void gshare(int exp, int bits)
+{
+	//Reset the BHR
+	BHR = 0;
+
+	//Reset the PHT
+	memset(PHT, 0, sizeof(char) * pow(2, exp));
+
+	//Setup the mask for the BHR and address
+	int MASK = 0;
+	for(int i = 0; i < bits; i++)
+		MASK |= 1 << i;
+	
+    for (tot_brs=0; tot_brs < totalBranches; tot_brs++) {
+		
+		int PHTidx = (BHR & MASK) ^ (branchRecord[tot_brs].addr_of_br & MASK);
+
+		int prediction = (PHT[PHTidx] & 2) >> 1;//Checks to see if the record at the BHR index is 10 or 11. (Taken)
+		if(prediction == branchRecord[tot_brs].taken)
+			correct_predictions++;
+		else
+			mispredictions++;
+
+		//Update PHT and BHR
+#pragma region Updates
+		BHR = (BHR << 1) + branchRecord[tot_brs].taken;
+		if(branchRecord[tot_brs].taken)
+		{
+			if(PHT[PHTidx] == 1) PHT[PHTidx]++;//Move from weak not taken to strong taken
+			if(PHT[PHTidx] < 3) PHT[PHTidx]++;
+		}
+		else
+		{
+			if(PHT[PHTidx] == 2) PHT[PHTidx]--;//Move from weak taken to strong not taken
+			if(PHT[PHTidx] > 0) PHT[PHTidx]--;
+		}
+#pragma endregion
+	}
+
+	printf("gshare\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
 }
 
 void SetupPHT(int exp)
