@@ -4,7 +4,7 @@
 #include <map>
 //#include <cmath>
 
-using namespace std;
+using std::map;
 
 #define MAX_BTB_LEN 100000
 #define MAXITERS 100000
@@ -18,12 +18,14 @@ unsigned int BHRMask;
 unsigned int BHR;
 unsigned char *PHT;
 
-int kBits = 4;
+int kBits = 5;
 int totalBranches;
 
 int GApEntries = 32;
 int bitsFromAddress;
 map<int, char*> GApHash;
+
+map<int, int> PAgBHR;
 
 int correct_predictions, mispredictions, tot_brs, btb_len, msbraddr, msbraddr_hits, msbraddr_misses;
 
@@ -40,6 +42,7 @@ struct {
 inline void error(char *s);
 inline void GAg();
 inline void GAs();
+inline void PAg(int, int);
 inline void SetupPHT(int exp);
 inline int get_btb_index(int addr_br_instr);
 inline int check_prediction(int branch, int index);
@@ -65,17 +68,19 @@ int main(int argc, char *argv[])
 
 	SetupPHT(kBits);
     populate_branchRecord();
+	fclose(f1);
 
 	GAg();
 	correct_predictions = mispredictions = 0;
 	GAs();
+	correct_predictions = mispredictions = 0;
+	PAg(kBits, 5);
 	
 	getchar();
 }
 
 void GAg()
 {
-	fseek(f1, 0, SEEK_SET);
 	
     for (tot_brs=0; tot_brs < totalBranches; tot_brs++) {
 		int PHTidx = BHR & BHRMask;
@@ -153,6 +158,60 @@ void GAs()
 	}
 
 	printf("GAp\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
+}
+
+void PAg(int exp, int BHTbits)
+{
+	memset(PHT, 0, sizeof(char) * pow(2, exp));//Reset the PHT
+
+	//Set the BHR for a 4 bit history
+	BHRMask = 0;
+	for(int i = 0; i < 4; i++)
+		BHRMask |= 1 << i;
+
+	//Set BHT mask
+	int BHTMask = 0;
+	for(int i = 0; i < BHTbits; i++)
+		BHTMask |= 1 << i;
+
+    for (tot_brs=0; tot_brs < totalBranches; tot_brs++) {
+
+		int addr = (branchRecord[tot_brs].addr_of_br) & BHTMask;
+		map<int, int>::iterator it = PAgBHR.find(addr);
+
+		//load the BHR of this register
+		int localBHR = 0;
+		if(it != PAgBHR.end())
+			localBHR = it->second;
+	
+
+		int PHTidx = localBHR & BHRMask;
+		int prediction = (PHT[PHTidx] & 2) >> 1;//Checks to see if the record at the BHR index is 10 or 11. (Taken)
+		if(prediction == branchRecord[tot_brs].taken)
+			correct_predictions++;
+		else
+			mispredictions++;
+
+		//Update PHT and BHR
+#pragma region Updates
+		localBHR = (localBHR << 1) + branchRecord[tot_brs].taken;
+		if(branchRecord[tot_brs].taken)
+		{
+			if(PHT[PHTidx] == 1) PHT[PHTidx]++;//Move from weak not taken to strong taken
+			PHT[PHTidx]++;
+		}
+		else
+		{
+			if(PHT[PHTidx] == 2) PHT[PHTidx]--;//Move from weak taken to strong not taken
+			PHT[PHTidx]--;
+		}
+
+		//Store the new BHR
+		PAgBHR[addr] = localBHR;
+#pragma endregion
+	}
+
+	printf("PAg\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
 }
 
 void SetupPHT(int exp)
