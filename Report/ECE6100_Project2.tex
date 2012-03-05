@@ -14,21 +14,22 @@
 \begin{center}
 \textbf{ECE 6100 Project 2}\\
 Gavin Gresham\\
+March 05, 2012\\
 \rule{3in}{1pt}\\
 \end{center}
 %] 
 
 \section{Evaluation}
-All of the results for the following analysis can be seen in Table 1.
+All of the results for the following analysis can be seen in Table 1. The History Bits column for PAg represents the size of the BHT. The results seem to indicate that the $k$-bits needed for a BHR is dependant on the specific branching of a program. What might be beneficial for one program could be detrimental to another.
 %95 unique addresses.
 \subsection{GAg}
 Using a global Branch History Register(BHR) of $k$-bits and a global Pattern History Table(PHT) of $2^k$ bits has good results that diminish the more bits the higher $k$ gets. This is most likely a result of the nature of the branching in the given history file. As there are fewer than 100 unique addresses and they are often arranged in short alternating patterns, a shorter BHR captures their behavior better.
 \subsection{GAp}
 The global BHR with per-address PHTs had a minor performance loss with increasing BHR size, and no performance change when adjusting PHT size. The accuracy reduction as $k$-bits increases is for the same reason as explained above. Lack of change when adjusting PHT size is harder to explain.
 Initially, I scoured my code looking for a bug that would cause this behavior. I found that bits from the BHR and branch address were being combined, and index range for the PHT was correct. I did, however, notice that at each PHT size the array was being sparsely covered.
-The sparse coverage of the PHT means that some indexes are rarely being used. Given the limited number of unique branch addresses and the short BHRs, this makes sense. I believe with a larger sample size this approach would performe better.
+The sparse coverage of the PHT means that some indexes are rarely being used. Given the limited number of unique branch addresses and the short BHRs, this makes sense. I believe with a larger sample size this approach would perform better.
 \subsection{PAg}
-Using per-address BHRs with a global PHT showed an increase in accuracy as the number of entries for the BHT increased. As the BHT size increases, the likelyhood of each branch address getting its own entry increases. With a more accurate look at the branch's past, it is easier to compare to similar states in the PHT.
+Using per-address BHRs with a global PHT showed an increase in accuracy as the number of entries for the BHT increased. As the BHT size increases, the likelihood of each branch address getting its own entry increases. With a more accurate look at the branch's past, it is easier to compare to similar states in the PHT.
 \subsection{Gshare}
 Finally, using the gshare implementation, accuracy dropped as the $(N,N)$ configuration rose. I can only speculate that the same issue that affecting GAg affects gshare as well. Fewer history bits appears to be beneficial for programs with a small number of unique branch addresses.
 
