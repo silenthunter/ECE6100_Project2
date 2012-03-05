@@ -1,0 +1,63 @@
+\documentclass[letterpaper,11pt]{article} 
+\title{ECE 6100 Project 2}
+\hyphenpenalty=5000
+\usepackage{graphicx}
+\usepackage[dvips,letterpaper,nohead]{geometry} 
+\usepackage{amsmath}
+\usepackage{nccmath}
+\usepackage{array}
+\usepackage{multirow}
+
+ \begin{document}
+
+%\twocolumn[%
+\begin{center}
+\textbf{ECE 6100 Project 2}\\
+Gavin Gresham\\
+\rule{3in}{1pt}\\
+\end{center}
+%] 
+
+\section{Evaluation}
+All of the results for the following analysis can be seen in Table 1.
+%95 unique addresses.
+\subsection{GAg}
+Using a global Branch History Register(BHR) of $k$-bits and a global Pattern History Table(PHT) of $2^k$ bits has good results that diminish the more bits the higher $k$ gets. This is most likely a result of the nature of the branching in the given history file. As there are fewer than 100 unique addresses and they are often arranged in short alternating patterns, a shorter BHR captures their behavior better.
+\subsection{GAp}
+The global BHR with per-address PHTs had a minor performance loss with increasing BHR size, and no performance change when adjusting PHT size. The accuracy reduction as $k$-bits increases is for the same reason as explained above. Lack of change when adjusting PHT size is harder to explain.
+Initially, I scoured my code looking for a bug that would cause this behavior. I found that bits from the BHR and branch address were being combined, and index range for the PHT was correct. I did, however, notice that at each PHT size the array was being sparsely covered.
+The sparse coverage of the PHT means that some indexes are rarely being used. Given the limited number of unique branch addresses and the short BHRs, this makes sense. I believe with a larger sample size this approach would performe better.
+\subsection{PAg}
+Using per-address BHRs with a global PHT showed an increase in accuracy as the number of entries for the BHT increased. As the BHT size increases, the likelyhood of each branch address getting its own entry increases. With a more accurate look at the branch's past, it is easier to compare to similar states in the PHT.
+\subsection{Gshare}
+Finally, using the gshare implementation, accuracy dropped as the $(N,N)$ configuration rose. I can only speculate that the same issue that affecting GAg affects gshare as well. Fewer history bits appears to be beneficial for programs with a small number of unique branch addresses.
+
+
+\begin{table}[tbh]
+\centering
+\begin{tabular}{!{\vrule width 1pt}c|c|c|c|c|c!{\vrule width 1pt}}
+\noalign{\hrule height 1pt}
+Predictor & History Bits* & PHT size & Correct & Misprediction & Percentage Correct\\
+\noalign{\hrule height 1pt}
+\multirow{4}{*}{GAg} & 2 &  & 1679 & 113 & 93.69\\\cline{2-5}
+ & 4 &  & 1677 & 115 & 93.58\\\cline{2-5}
+ & 6 &  & 1666 & 126 & 92.97\\\cline{2-5}
+ & 8 &  & 1657 & 135 & 92.47\\\noalign{\hrule height 1pt}
+\multirow{6}{*}{GAp} & 2 & 32 & 1690 & 102 & 94.31\\\cline{2-5}
+ & 4 & 32 & 1671 & 121 & 93.25\\\cline{2-5}
+ & 2 & 64 & 1690 & 102 & 94.31\\\cline{2-5}
+ & 4 & 64 & 1671 & 121 & 93.25\\\cline{2-5}
+ & 2 & 128 & 1690 & 102 & 94.31\\\cline{2-5}
+ & 4 & 128 & 1671 & 121 & 93.25\\\noalign{\hrule height 1pt}
+\multirow{3}{*}{PAg} & 32 &  & 1677 & 115 & 93.58\\\cline{2-5}
+ & 64 &  & 1680 & 112 & 93.75\\\cline{2-5}
+ & 128 &  & 1681 & 111 & 93.81\\\noalign{\hrule height 1pt}
+\multirow{3}{*}{Gshare} & 4 &  & 1660 & 132 & 92.63\\\cline{2-5}
+ & 6 &  & 1665 & 137 & 92.40\\\cline{2-5}
+ & 8 &  & 1627 & 165 & 90.79\\\noalign{\hrule height 1pt}
+\end{tabular}
+\caption{Shows the accuracy of various branch predictors given {\em History Bits} and {\em PHT Size}. 
+{\scriptsize *For PAg History Bits refers the number of BHT entries}}
+\end{table}
+
+\end{document}

@@ -26,6 +26,9 @@ map<int, char*> GApHash;
 
 map<int, int> PAgBHR;
 
+map<int,int> AddrMap;
+int uniqueAddr = 0;
+
 int correct_predictions, mispredictions, tot_brs, btb_len, msbraddr, msbraddr_hits, msbraddr_misses;
 
 struct { 
@@ -320,6 +323,14 @@ void populate_branchRecord()
 		branchRecord[tot_brs].taken = t_or_nt;
 		branchRecord[tot_brs].addr_of_br = addr_br_instr;
 		branchRecord[tot_brs].br_target = br_target;
+
+		map<int, int>::iterator it = AddrMap.find(addr_br_instr);
+		int count = 0;
+		if(it == AddrMap.end())
+			uniqueAddr++;
+		else
+			count = it->second;
+		AddrMap[addr_br_instr] = count + 1;
 	}
 
 }
