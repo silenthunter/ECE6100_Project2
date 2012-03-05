@@ -37,13 +37,15 @@ struct {
 
 } branchRecord[MAX_BTB_LEN] ;
 
+enum PREDICTOR { BR_GAg, BR_GAp, BR_PAg, BR_gshare};
+
 #pragma region Inline Declarations
 inline void error(char *s);
 inline void GAg();
-inline void GAs();
+inline void GAp();
 inline void PAg(int, int);
 inline void gshare(int, int);
-inline void SetupPHT(int exp);
+inline void SetupPHT(int, PREDICTOR);
 inline int get_btb_index(int addr_br_instr);
 inline int check_prediction(int branch, int index);
 inline void update_table(int branch, int index, int addr, int target);
@@ -52,8 +54,6 @@ inline void populate_branchRecord();
 inline void clear_btb();
 inline double log2(double n);
 #pragma endregion
-
-enum PREDICTOR { BR_GAg, BR_GAp, BR_PAg, BR_gshare};
 
 int main(int argc, char *argv[])
 {
@@ -82,20 +82,22 @@ int main(int argc, char *argv[])
 
     correct_predictions = mispredictions = 0;
     msbraddr = msbraddr_hits = msbraddr_misses = 0;
+	GApEntries = PHTSize;
 
-	SetupPHT(kBits);
+	SetupPHT(kBits, choice);
     populate_branchRecord();
 	fclose(f1);
 
-	GAg();
-	correct_predictions = mispredictions = 0;
-	GAs();
-	correct_predictions = mispredictions = 0;
-	PAg(kBits, 5);
-	correct_predictions = mispredictions = 0;
-	gshare(kBits, 4);
+	if(choice == BR_GAg)
+		GAg();
+	else if(choice == BR_GAp)
+		GAp();
+	else if(choice == BR_PAg)
+		PAg(kBits, (int)log2(kBits));
+	else if(choice == BR_gshare)
+		gshare(kBits, kBits);
 	
-	getchar();
+	//getchar();
 }
 
 void GAg()
@@ -128,7 +130,7 @@ void GAg()
 	printf("GAg\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
 }
 
-void GAs()
+void GAp()
 {
 	fseek(f1, 0, SEEK_SET);
 	bitsFromAddress = (int)log2(GApEntries) - kBits;
@@ -181,7 +183,7 @@ void GAs()
 
 void PAg(int exp, int BHTbits)
 {
-	memset(PHT, 0, sizeof(char) * pow(2, exp));//Reset the PHT
+	memset(PHT, 0, sizeof(char) * pow(2, 4));//Reset the PHT
 
 	//Set the BHR for a 4 bit history
 	BHRMask = 0;
@@ -275,9 +277,10 @@ void gshare(int exp, int bits)
 	printf("gshare\nCorrect: %d\nIncorrect:%d\n\n", correct_predictions, mispredictions);
 }
 
-void SetupPHT(int exp)
+void SetupPHT(int exp, PREDICTOR choice)
 {
-	PHTSize = pow(2, exp);
+	if(choice == BR_GAg)
+		PHTSize = pow(2, exp);
 
 	//Only want the number of BHR bits to be enough to fully reference the PHT. Not any larger.
 	// 2^N bit PHT
