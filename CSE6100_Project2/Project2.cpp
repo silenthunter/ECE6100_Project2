@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <iostream>
 #include <map>
+#ifndef _WINDOWS_
+#include <math.h>
+#include <cstring>
+#endif
 
 using std::map;
 
@@ -55,7 +59,9 @@ inline void update_table(int branch, int index, int addr, int target);
 inline void run_btb();
 inline void populate_branchRecord();
 inline void clear_btb();
+#ifdef _WINDOWS
 inline double log2(double n);
+#endif
 #pragma endregion
 
 int main(int argc, char *argv[])
@@ -101,6 +107,7 @@ int main(int argc, char *argv[])
 		gshare(kBits, kBits);
 	
 	//getchar();
+	return 1;
 }
 
 void GAg()
@@ -135,7 +142,6 @@ void GAg()
 
 void GAp()
 {
-	fseek(f1, 0, SEEK_SET);
 	bitsFromAddress = (int)log2(GApEntries) - kBits;
 	int addrMask = 0;
 	for(int i = 0; i < bitsFromAddress; i++)//Creates a mask to get the lower bits of the address
@@ -415,8 +421,10 @@ void error(char *s)
 
 //Source: Lothar on http://stackoverflow.com/questions/758001/log2-not-found-in-my-math-h
 // Calculates log2 of number.  
+#ifdef _WINDOWS
 double log2( double n )  
 {  
     // log(n)/log(2) is log2.  
     return log( n ) / log( 2 );  
 }
+#endif
